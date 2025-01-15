@@ -1,218 +1,143 @@
 package Entities;
 
-// Java imports
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import jakarta.persistence.*;
+import util.HibernateUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-// Class imports
-import util.MySQLAccess;
+import java.util.List;
 
+@Entity
+@Table(name = "useraccount")
 public class UserAccount {
 
-    public Map<String, String> getUserAccount(String uid, String password) {
-        Map<String, String> infoMap = null;
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "SELECT * FROM useraccount WHERE uid = ? AND password = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, uid);
-            statement.setString(2, password);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                infoMap = new HashMap<>();
-                infoMap.put("uid", resultSet.getString("uid"));
-                infoMap.put("password", resultSet.getString("password"));
-                infoMap.put("name", resultSet.getString("name"));
-                infoMap.put("userProfile", resultSet.getString("userProfile"));
-                infoMap.put("isSuspended", resultSet.getString("isSuspended"));
-                infoMap.put("cafeRole", resultSet.getString("cafeRole"));
-                infoMap.put("maxWorkSlots", resultSet.getString("maxWorkHours"));
-                infoMap.put("lastLogIn", resultSet.getString("lastLogIn"));
-            }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return infoMap;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+
+    @Column(name = "username")
+    private String username;
+
+    @Column(name = "password")
+    private String password;
+
+    @Column(name = "role")
+    private String role;
+
+    @Column(name = "isSuspended")
+    private boolean isSuspended;
+
+    // Constructors
+    public UserAccount() {}
+
+    public UserAccount(String username, String password, String role, boolean isSuspended) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.isSuspended = isSuspended;
     }
 
-    public Map<String, String> getUserAccount(String uid) {
-        Map<String, String> infoMap = null;
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "SELECT * FROM useraccount WHERE uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, uid);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                infoMap = new HashMap<>();
-                infoMap.put("uid", resultSet.getString("uid"));
-                infoMap.put("password", resultSet.getString("password"));
-                infoMap.put("name", resultSet.getString("name"));
-                infoMap.put("userProfile", resultSet.getString("userProfile"));
-                infoMap.put("isSuspended", resultSet.getString("isSuspended"));
-                infoMap.put("cafeRole", resultSet.getString("cafeRole"));
-                infoMap.put("maxWorkSlots", resultSet.getString("maxWorkHours"));
-                infoMap.put("lastLogIn", resultSet.getString("lastLogIn"));
-            }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return infoMap;
+    // Getters and Setters
+    public int getId() {
+        return id;
     }
 
-    public Vector<Map<String, String>> getManyAccounts(String name) {
-        Vector<Map<String, String>> accMaps = new Vector<>();
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "SELECT * FROM useraccount WHERE name = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                Map<String, String> infoMap = new HashMap<>();
-                infoMap.put("uid", resultSet.getString("uid"));
-                infoMap.put("password", resultSet.getString("password"));
-                infoMap.put("name", resultSet.getString("name"));
-                infoMap.put("userProfile", resultSet.getString("userProfile"));
-                infoMap.put("isSuspended", resultSet.getString("isSuspended"));
-                infoMap.put("cafeRole", resultSet.getString("cafeRole"));
-                infoMap.put("maxWorkSlots", resultSet.getString("maxWorkHours"));
-                infoMap.put("lastLogIn", resultSet.getString("lastLogIn"));
-                accMaps.add(infoMap);
-            }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return accMaps;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public boolean insertToDB(String uid, String name, String password, String userProfile, String isSuspended) throws ClassNotFoundException {
-        // connect to database and query an insert statement
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public boolean isSuspended() {
+        return isSuspended;
+    }
+
+    public void setSuspended(boolean suspended) {
+        isSuspended = suspended;
+    }
+
+    // CRUD Operations
+
+    public static UserAccount getUserAccountByUsername(String username) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
         try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "INSERT INTO useraccount VALUES (?, ?, ?, ?, ?, NULL, NULL, NULL)";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, uid);
-            statement.setString(2, name);
-            statement.setString(3, password);
-            statement.setString(4, userProfile);
-            statement.setString(5, isSuspended);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
+            return session.createQuery("FROM UserAccount WHERE username = :username", UserAccount.class)
+                    .setParameter("username", username)
+                    .uniqueResult();
+        } finally {
+            session.close();
         }
-        catch (SQLException e) {
+    }
+
+    public static List<UserAccount> getAllUserAccounts() {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            return session.createQuery("FROM UserAccount", UserAccount.class).list();
+        } finally {
+            session.close();
+        }
+    }
+
+    public static boolean saveUserAccount(UserAccount userAccount) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.save(userAccount);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
             return false;
         }
     }
 
-    public boolean updateDB(String uid, String updatedName, String updatedPassword) throws ClassNotFoundException {
-        // connect to database and query an update statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "UPDATE useraccount SET name = ?, password = ? WHERE uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, updatedName);
-            statement.setString(2, updatedPassword);
-            statement.setString(3, uid);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
+    public static boolean updateUserAccount(UserAccount userAccount) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.update(userAccount);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
             return false;
         }
     }
 
-    // For cafe staff to indicate their cafe roles
-    public boolean indicateCafeRoleAndMaxWS(String uid, String cafeRole, String maxWorkSlots) throws ClassNotFoundException {
-        // connect to database and query an update statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "UPDATE useraccount SET cafeRole = ?, maxWorkHours = ? WHERE uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, cafeRole);
-            statement.setString(2, maxWorkSlots);
-            statement.setString(3, uid);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean deleteFromDB(String uid) throws ClassNotFoundException {
-        // connect to database and query a delete statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "DELETE FROM useraccount WHERE uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, uid);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean suspendUserAccount(String uid) throws ClassNotFoundException {
-        // connect to database and query an update statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "UPDATE useraccount SET isSuspended = ? WHERE uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, "1");
-            statement.setString(2, uid);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean reinstateUserAccount(String uid) throws ClassNotFoundException {
-        // connect to database and query an update statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "UPDATE useraccount SET isSuspended = ? WHERE uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, "0");
-            statement.setString(2, uid);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
+    public static boolean deleteUserAccount(UserAccount userAccount) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.delete(userAccount);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
             return false;
         }
