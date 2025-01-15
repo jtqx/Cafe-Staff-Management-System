@@ -1,243 +1,198 @@
 package Entities;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+// Hibernate imports
+import jakarta.persistence.*;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import util.HibernateUtil;
+
+// Java imports
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
-import util.MySQLAccess;
-
+@Entity
+@Table(name = "workslot")
 public class WorkSlot {
-    
-    public Map<String, String> getWorkSlot(String date, String startTime, String endTime, String status) throws ClassNotFoundException, SQLException {
-        MySQLAccess sqlAccess = new MySQLAccess();
-        Map<String, String> infoMap = null;
 
-        try {
-            // executing the query to get a result set
-            String query = "SELECT * FROM workslot WHERE date = ? AND startTime = ? AND endTime = ?";
-            // if status string not empty, modify query
-            if  (!status.equals("")) query += "AND availabilityStatus = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            // add a parameter index for status
-            if  (!status.equals("")) statement.setString(4, status);
-            ResultSet result = sqlAccess.executeQuery(statement);       // get the results from the query
-            // extracting result set information
-            while (result.next()) {
-                infoMap = new HashMap<>();
-                infoMap.put("date", result.getString("date"));
-                infoMap.put("startTime", result.getString("startTime"));
-                infoMap.put("endTime", result.getString("endTime"));
-                infoMap.put("maxCashier", result.getString("maxCashier"));
-                infoMap.put("maxChef", result.getString("maxChef"));
-                infoMap.put("maxWaiter", result.getString("maxWaiter"));
-                infoMap.put("availabilityStatus", result.getString("availabilityStatus"));
-            }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return infoMap;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+
+    @Column(name = "date")
+    private String date;
+
+    @Column(name = "startTime")
+    private String startTime;
+
+    @Column(name = "endTime")
+    private String endTime;
+
+    @Column(name = "maxCashier")
+    private int maxCashier;
+
+    @Column(name = "maxChef")
+    private int maxChef;
+
+    @Column(name = "maxWaiter")
+    private int maxWaiter;
+
+    @Column(name = "availabilityStatus")
+    private String availabilityStatus;
+
+    // Getters and Setters
+
+    public String getDate() {
+        return date;
     }
 
-    public Vector<Map<String, String>> getManySlots(String date, String status) throws ClassNotFoundException, SQLException {
-        MySQLAccess sqlAccess = new MySQLAccess();
-        Vector<Map<String, String>> slotMaps = new Vector<>();
+    public void setDate(String date) {
+        this.date = date;
+    }
 
-        try {
-            // executing the proper query to get a result set
-            PreparedStatement statement = null;
-            // both parameters are empty
-            if(status.equals("") && date.equals("")) {
-                sqlAccess.close();
-                return slotMaps;
-            }
-            // date is empty while status is not
-            else if(!status.equals("") && date.equals("")) 
-            {
-                String query = "SELECT * FROM workslot WHERE availabilityStatus = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, status);
-            }
-            // status is empty while date is not
-            else if(status.equals("") && !date.equals("")) {
+    public String getStartTime() {
+        return startTime;
+    }
 
-                String query = "SELECT * FROM workslot WHERE date = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, date);
-            }
-            // both not empty
-            else {
-                String query = "SELECT * FROM workslot WHERE date = ? AND availabilityStatus = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, date);
-                statement.setString(2, status);
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
+    public int getMaxCashier() {
+        return maxCashier;
+    }
+
+    public void setMaxCashier(int maxCashier) {
+        this.maxCashier = maxCashier;
+    }
+
+    public int getMaxChef() {
+        return maxChef;
+    }
+
+    public void setMaxChef(int maxChef) {
+        this.maxChef = maxChef;
+    }
+
+    public int getMaxWaiter() {
+        return maxWaiter;
+    }
+
+    public void setMaxWaiter(int maxWaiter) {
+        this.maxWaiter = maxWaiter;
+    }
+
+    public String getAvailabilityStatus() {
+        return availabilityStatus;
+    }
+
+    public void setAvailabilityStatus(String availabilityStatus) {
+        this.availabilityStatus = availabilityStatus;
+    }
+
+    // Hibernate methods
+
+    public Map<String, String> getWorkSlot(String date, String startTime, String endTime, String status) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM WorkSlot WHERE date = :date AND startTime = :startTime AND endTime = :endTime";
+            if (!status.isEmpty()) {
+                hql += " AND availabilityStatus = :status";
             }
 
-            ResultSet result = sqlAccess.executeQuery(statement);
-            // extracting result set information
-            while (result.next()) {
+            var query = session.createQuery(hql, WorkSlot.class);
+            query.setParameter("date", date);
+            query.setParameter("startTime", startTime);
+            query.setParameter("endTime", endTime);
+
+            if (!status.isEmpty()) {
+                query.setParameter("status", status);
+            }
+
+            WorkSlot slot = query.uniqueResult();
+            if (slot != null) {
                 Map<String, String> infoMap = new HashMap<>();
-                infoMap.put("date", result.getString("date"));
-                infoMap.put("startTime", result.getString("startTime"));
-                infoMap.put("endTime", result.getString("endTime"));
-                infoMap.put("maxCashier", result.getString("maxCashier"));
-                infoMap.put("maxChef", result.getString("maxChef"));
-                infoMap.put("maxWaiter", result.getString("maxWaiter"));
-                infoMap.put("availabilityStatus", result.getString("availabilityStatus"));
-                slotMaps.add(infoMap);
+                infoMap.put("date", slot.getDate());
+                infoMap.put("startTime", slot.getStartTime());
+                infoMap.put("endTime", slot.getEndTime());
+                infoMap.put("maxCashier", String.valueOf(slot.getMaxCashier()));
+                infoMap.put("maxChef", String.valueOf(slot.getMaxChef()));
+                infoMap.put("maxWaiter", String.valueOf(slot.getMaxWaiter()));
+                infoMap.put("availabilityStatus", slot.getAvailabilityStatus());
+                return infoMap;
             }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return slotMaps;
+        return null;
     }
 
-    public boolean checkIfExist(String date, String startTime, String endTime) throws ClassNotFoundException {
-        // connect to database and query an insert statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "SELECT * FROM workslot WHERE date = ? AND startTime = ? AND endTime = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            ResultSet result = sqlAccess.executeQuery(statement);       // get the results from the query
-            boolean exists = result.next();                             // get the status
-            sqlAccess.close();          // close the connection
-            return exists;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+    public List<WorkSlot> getManySlots(String date, String status) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM WorkSlot";
 
-    public int getAssignedCashierCount(String date, String startTime, String endTime) throws ClassNotFoundException {
-        int amount = 0;
-        // connect to database and query an insert statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "SELECT COUNT(*) as amount FROM workslot w JOIN bid b ON w.date = b.date AND w.startTime = b.startTime AND w.endTime = b.endTime WHERE b.cafeRole = 'Cashier' AND b.status = 'APPROVED' GROUP BY w.date, w.startTime, w.endTime";
-            ResultSet result = sqlAccess.executeQuery(query);       // get the results from the query
-            if(result.next()) {
-                amount = result.getInt("amount");
+            if (!date.isEmpty() && !status.isEmpty()) {
+                hql += " WHERE date = :date AND availabilityStatus = :status";
+            } else if (!date.isEmpty()) {
+                hql += " WHERE date = :date";
+            } else if (!status.isEmpty()) {
+                hql += " WHERE availabilityStatus = :status";
             }
-            sqlAccess.close();          // close the connection
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return amount;
-    }
 
-    public int getAssignedChefCount(String date, String startTime, String endTime) throws ClassNotFoundException {
-        int amount = 0;
-        // connect to database and query an insert statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "SELECT COUNT(*) as amount FROM workslot w JOIN bid b ON w.date = b.date AND w.startTime = b.startTime AND w.endTime = b.endTime WHERE b.cafeRole = 'Chef' AND b.status = 'APPROVED' GROUP BY w.date, w.startTime, w.endTime";
-            ResultSet result = sqlAccess.executeQuery(query);       // get the results from the query
-            if(result.next()) {
-                amount = result.getInt("amount");
+            var query = session.createQuery(hql, WorkSlot.class);
+
+            if (!date.isEmpty()) {
+                query.setParameter("date", date);
             }
-            sqlAccess.close();          // close the connection
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return amount;
-    }
 
-    public int getAssignedWaiterCount(String date, String startTime, String endTime) throws ClassNotFoundException {
-        int amount = 0;
-        // connect to database and query an insert statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "SELECT COUNT(*) as amount FROM workslot w JOIN bid b ON w.date = b.date AND w.startTime = b.startTime AND w.endTime = b.endTime WHERE b.cafeRole = 'Waiter' AND b.status = 'APPROVED' GROUP BY w.date, w.startTime, w.endTime";
-            ResultSet result = sqlAccess.executeQuery(query);       // get the results from the query
-            if(result.next()) {
-                amount = result.getInt("amount");
+            if (!status.isEmpty()) {
+                query.setParameter("status", status);
             }
-            sqlAccess.close();          // close the connection
-        }
-        catch (SQLException e) {
+
+            return query.list();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return amount;
+        return null;
     }
 
-    public boolean InsertToDB(String date, String startTime, String endTime, String cashierNum, String chefNum, String waiterNum, String status) throws ClassNotFoundException {
-        // connect to database and query an insert statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "INSERT INTO workslot(date, startTime, endTime, maxCashier, maxChef, maxWaiter, availabilityStatus) VALUES(?, ?, ?, ?, ?, ?, ?)";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            statement.setString(4, cashierNum);
-            statement.setString(5, chefNum);
-            statement.setString(6, waiterNum);
-            statement.setString(7, status);
-            boolean result = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return result;
-        }
-        catch (SQLException e) {
+    public boolean saveOrUpdateWorkSlot() {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.saveOrUpdate(this);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
             e.printStackTrace();
-            return false;
         }
+        return false;
     }
 
-    public boolean updateDB(String date, String startTime, String endTime, String maxCashier, String maxChef, String maxWaiter, String status) throws ClassNotFoundException {
-        // connect to database and query an update statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "UPDATE workslot SET maxCashier = ?, maxChef = ?, maxWaiter = ?, availabilityStatus = ? WHERE date = ? AND startTime = ? AND endTime = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, maxCashier);
-            statement.setString(2, maxChef);
-            statement.setString(3, maxWaiter);
-            statement.setString(4, status);
-            statement.setString(5, date);
-            statement.setString(6, startTime);
-            statement.setString(7, endTime);
-            boolean result = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return result;
-        }
-        catch (SQLException e) {
+    public boolean deleteWorkSlot() {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.remove(this);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
             e.printStackTrace();
-            return false;
         }
-    }
-
-    public boolean deleteFromDB(String date, String startTime, String endTime) throws ClassNotFoundException {
-        // connect to database and query a delete statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "DELETE FROM workslot WHERE date = ? AND startTime = ? AND endTime = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            //TODO: delete bids also
-            return status;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        return false;
     }
 }
