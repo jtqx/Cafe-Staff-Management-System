@@ -1,315 +1,166 @@
 package Entities;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import jakarta.persistence.*;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import util.HibernateUtil;
 
-import util.MySQLAccess;
+import java.util.List;
 
+@Entity
+@Table(name = "bid")
 public class Bid {
-    
-    public Map<String, String> getBid(String date, String startTime, String endTime, String uid, String status) throws ClassNotFoundException, SQLException {
-        MySQLAccess sqlAccess = new MySQLAccess();
-        Map<String, String> infoMap = null;
 
-        try {
-            // executing the query to get a result set
-            String query = "SELECT * FROM bid WHERE date = ? AND startTime = ? AND endTime = ? AND uid = ?"; 
-            // modify the query if the status is empty
-            if(!status.equals("")) {
-                query += " AND status = ?";
-            }
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            statement.setString(4, uid);
-            // modify the query if the status is empty
-            if(!status.equals("")) {
-                statement.setString(5, status);;
-            }
-            ResultSet result = sqlAccess.executeQuery(statement);       // get the results from the query
-            // extracting result set information
-            while (result.next()) {
-                infoMap = new HashMap<>();
-                infoMap.put("date", result.getString("date"));
-                infoMap.put("startTime", result.getString("startTime"));
-                infoMap.put("endTime", result.getString("endTime"));
-                infoMap.put("uid", result.getString("uid"));
-                infoMap.put("cafeRole", result.getString("cafeRole"));
-                infoMap.put("status", result.getString("status"));
-            }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return infoMap;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+
+    @Column(name = "userId")
+    private int userId;
+
+    @Column(name = "date")
+    private String date;
+
+    @Column(name = "startTime")
+    private String startTime;
+
+    @Column(name = "endTime")
+    private String endTime;
+
+    @Column(name = "cafeRole")
+    private String cafeRole;
+
+    @Column(name = "status")
+    private String status;
+
+    // Constructors
+    public Bid() {
     }
 
-    public Vector<Map<String, String>> getManyBids(String date, String startTime, String endTime, String status) throws ClassNotFoundException, SQLException {
-        MySQLAccess sqlAccess = new MySQLAccess();
-        Vector<Map<String, String>> bidMaps = new Vector<>();
-
-        try {
-            // executing the proper query to get a result set
-            PreparedStatement statement = null;
-            String query = "SELECT * FROM bid WHERE date = ? AND startTime = ? AND endTime = ?";
-            // modify query if the status is not empty
-            if(!status.equals("")) {
-                query += " AND status = ?";
-            }
-            statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            // modify query if the status is not empty
-            if(!status.equals("")) { 
-                statement.setString(4, status);
-            }
-            ResultSet result = sqlAccess.executeQuery(statement);
-            // extracting result set information
-            while (result.next()) {
-                Map<String, String> infoMap = new HashMap<>();
-                infoMap.put("date", result.getString("date"));
-                infoMap.put("startTime", result.getString("startTime"));
-                infoMap.put("endTime", result.getString("endTime"));
-                infoMap.put("uid", result.getString("uid"));
-                infoMap.put("cafeRole", result.getString("cafeRole"));
-                infoMap.put("status", result.getString("status"));
-                bidMaps.add(infoMap);
-            }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return bidMaps;
+    public Bid(int userId, String date, String startTime, String endTime, String cafeRole, String status) {
+        this.userId = userId;
+        this.date = date;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.cafeRole = cafeRole;
+        this.status = status;
     }
 
-    public Vector<Map<String, String>> getManyBids(String date, String uid, String status) throws ClassNotFoundException, SQLException {
-        MySQLAccess sqlAccess = new MySQLAccess();
-        Vector<Map<String, String>> bidMaps = new Vector<>();
-
-        try {
-            // executing the proper query to get a result set
-            PreparedStatement statement = null;
-            // find only date
-            if(!date.equals("") && uid.equals("") && status.equals("")) {
-                String query = "SELECT * FROM bid WHERE date = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, date);
-            }
-            // find only uid
-            else if(date.equals("") && !uid.equals("") && status.equals("")) {
-                String query = "SELECT * FROM bid WHERE uid = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, uid);
-            } 
-            // find only status
-            else if(date.equals("") && uid.equals("") && !status.equals("")) {
-                String query = "SELECT * FROM bid WHERE status = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, status);
-            }
-            // find by date and uid
-            else if(!date.equals("") && !uid.equals("") && status.equals("")) {
-                String query = "SELECT * FROM bid WHERE date = ? AND uid = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, date);
-                statement.setString(2, uid);
-            }
-            // find by uid and status
-            else if(date.equals("") && !uid.equals("") && !status.equals("")) {
-                String query = "SELECT * FROM bid WHERE uid = ? AND status = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, uid);
-                statement.setString(2, status);
-            }
-            // find by date and status
-            else if(date.equals("") && !uid.equals("") && status.equals("")) {
-                String query = "SELECT * FROM bid WHERE date = ? AND status = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, date);
-                statement.setString(2, status);
-            }
-            // find by all
-            else if(!date.equals("") && !uid.equals("") && !status.equals("")) {
-                String query = "SELECT * FROM bid WHERE date = ? AND uid = ? AND status = ?";
-                statement = sqlAccess.prepareStatement(query);
-                statement.setString(1, date);
-                statement.setString(2, uid);
-                statement.setString(3, status);
-            }
-            ResultSet result = sqlAccess.executeQuery(statement);
-            // extracting result set information
-            while (result.next()) {
-                Map<String, String> infoMap = new HashMap<>();
-                infoMap.put("date", result.getString("date"));
-                infoMap.put("startTime", result.getString("startTime"));
-                infoMap.put("endTime", result.getString("endTime"));
-                infoMap.put("uid", result.getString("uid"));
-                infoMap.put("cafeRole", result.getString("cafeRole"));
-                infoMap.put("status", result.getString("status"));
-                bidMaps.add(infoMap);
-            }
-            sqlAccess.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return bidMaps;
+    // Getters and setters
+    public int getId() {
+        return id;
     }
 
-    public boolean checkIfExist(String date, String startTime, String endTime, String uid) throws ClassNotFoundException, SQLException {
-        MySQLAccess sqlAccess = new MySQLAccess();
+    public void setId(int id) {
+        this.id = id;
+    }
 
-        try {
-            // executing the query to get a result set
-            String query = "SELECT * FROM bid WHERE date = ? AND startTime = ? AND endTime = ? AND uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            statement.setString(4, uid);
-            ResultSet result = sqlAccess.executeQuery(statement);       // get the results from the query
-            boolean exists = result.next();
-            sqlAccess.close();
-            return exists;
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getCafeRole() {
+        return cafeRole;
+    }
+
+    public void setCafeRole(String cafeRole) {
+        this.cafeRole = cafeRole;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    // CRUD operations
+
+    public static Bid getBidById(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(Bid.class, id);
         }
-        catch (SQLException e) {
+    }
+
+    public static List<Bid> getAllBids() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("from Bid", Bid.class).list();
+        }
+    }
+
+    public static boolean saveBid(Bid bid) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.save(bid);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
             return false;
         }
     }
 
-    public boolean InsertToDB(String date, String startTime, String endTime, String uid, String cafeRole, String status) throws ClassNotFoundException {
-        // connect to database and query an insert statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "INSERT INTO bid(date, startTime, endTime, uid, cafeRole, status) VALUES(?, ?, ?, ?, ?, ?)";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            statement.setString(4, uid);
-            statement.setString(5, cafeRole);
-            statement.setString(6, status);
-            boolean result = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return result;
-        }
-        catch (SQLException e) {
+    public static boolean updateBid(Bid bid) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.update(bid);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
             return false;
         }
     }
 
-    public boolean updateDB(String date, String startTime, String endTime, String uid, String cafeRole, String status) throws ClassNotFoundException {
-        // connect to database and query an update statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "UPDATE bid SET cafeRole = ?, status = ? WHERE date = ? AND startTime = ? AND endTime = ? AND uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, cafeRole);
-            statement.setString(2, status);
-            statement.setString(3, date);
-            statement.setString(4, startTime);
-            statement.setString(5, endTime);
-            statement.setString(6, uid);
-            boolean result = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return result;
-        }
-        catch (SQLException e) {
+    public static boolean deleteBid(int id) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            Bid bid = session.get(Bid.class, id);
+            if (bid != null) {
+                session.delete(bid);
+                transaction.commit();
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
             return false;
         }
     }
-
-    public boolean updateDateTime(String orgDate, String orgStartTime, String orgEndTime, String uid, String newDate, String newStartTime, String newEndTime) throws ClassNotFoundException {
-        // connect to database and query an update statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "UPDATE bid SET date = ?, startTime = ?, endTime = ? WHERE date = ? AND startTime = ? AND endTime = ? AND uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, newDate);
-            statement.setString(2, newStartTime);
-            statement.setString(3, newEndTime);
-            statement.setString(4, orgDate);
-            statement.setString(5, orgStartTime);
-            statement.setString(6, orgEndTime);
-            statement.setString(7, uid);
-            boolean result = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return result;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // delete all bid that is in a certain timeslot
-    public boolean deleteFromDB(String date, String startTime, String endTime) throws ClassNotFoundException {
-        // connect to database and query a delete statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "DELETE FROM bid WHERE date = ? AND startTime = ? AND endTime = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }    
-
-    // delete a specific bid
-    public boolean deleteFromDB(String date, String startTime, String endTime, String uid) throws ClassNotFoundException {
-        // connect to database and query a delete statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "DELETE FROM bid WHERE date = ? AND startTime = ? AND endTime = ? AND uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, date);
-            statement.setString(2, startTime);
-            statement.setString(3, endTime);
-            statement.setString(4, uid);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // delete all related to a user
-    public boolean deleteFromDB(String uid) throws ClassNotFoundException {
-        // connect to database and query a delete statement
-        try {
-            MySQLAccess sqlAccess = new MySQLAccess();
-            String query = "DELETE FROM bid WHERE uid = ?";
-            PreparedStatement statement = sqlAccess.prepareStatement(query);
-            statement.setString(1, uid);
-            boolean status = sqlAccess.executePreparedStatement(statement);     // get the status of the query
-            sqlAccess.close();          // close the connection
-            return status;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
 }
